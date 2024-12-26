@@ -49,6 +49,7 @@ _bam_tag_type = {
     'f':{"fmt":'<f', 'byte_len':4}, # float, float
     'd':{"fmt":'<d', 'byte_len':8}  # double, double
 }
+_cigar_op_str = dict(zip(list(range(9)), "MIDNSHP=X"))
 
 def read_bgzip_index(path_gzi):
     list_coffset_of_block_start = [0]
@@ -240,6 +241,28 @@ def extract_data_from_binary_read(read_data):
         dict_data[tag] = value
         rest_data = rest_data[n_for_this_tag:]
     return dict_data
+
+def convert_binary_to_seq(data, len_data):
+    dict_val_to_seq = dict(zip(range(16), "=ACMGRSVTWYHKDBN"))
+    hex_val = list(map(int,data.hex()))
+    seq = ''.join(list(map(dict_val_to_seq.__getitem__, hex_val))[:len_data])
+    return seq
+
+def convert_binary_to_phred_qual(data):
+    qual = list(data)
+    ascii_qual = list(map(lambda val: val + 33, qual))
+    str_ascii_qual = ''.join(list(map(chr, ascii_qual)))
+    return str_ascii_qual
+
+def convert_cigar_list_to_cigarstring(list_cigar):
+    list_str_cigar = list()
+    for cigar_op in list_cigar:
+        op_len = cigar_op >> 4
+        op = cigar_op ^ (op_len << 4)
+        op_str = _cigar_op_str[op]
+        list_str_cigar.append(str(op_len))
+        list_str_cigar.append(op_str)
+    return ''.join(list_str_cigar)
 
 def extract_data_from_binary_bam_header(data):
     bam_magic = data[:4]
