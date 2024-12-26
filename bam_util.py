@@ -174,6 +174,18 @@ def split_bgzf_block_into_reads(block_data, return_read_start_bytes = False):
     else:
         return list_reads_data
 
+def extract_readid_from_binary_read(read_data):
+    dict_data = dict()
+    ind_check = 0
+    for bin_key in _bam_read_binary_format_order:
+        binary_format = _bam_read_binary_format[bin_key]
+        binary_read_data_part = get_part_of_binary_string(read_data, ind_check, len_data = binary_format["byte"])
+        dict_data[bin_key] = struct.unpack(binary_format["fmt"], binary_read_data_part)[0]
+        ind_check += binary_format["byte"]
+    
+    dict_data["read_name"] = get_part_of_binary_string(read_data, ind_check, len_data = dict_data["l_read_name"])
+    return dict_data["read_name"]
+
 def extract_data_from_binary_read(read_data):
     dict_data = dict()
     
